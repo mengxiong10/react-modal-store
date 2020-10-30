@@ -1,7 +1,6 @@
 import React from 'react';
 
-export interface ModalStoreContextValue {
-  push: (key: string, state: any) => void;
-}
+type ModalStoreContextValue = (key: string, state: any) => void;
 
-export const ModalStoreContext = React.createContext<ModalStoreContextValue | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const ModalStoreContext = React.createContext<ModalStoreContextValue>(() => {});

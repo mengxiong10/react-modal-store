@@ -19,6 +19,6 @@
     "noUnusedParameters": true,
     "esModuleInterop": true
   },
-  "include": ["src", "test", "typings"],
+  "include": ["src", "test", "example", "typings"],
   "exclude": ["node_modules"]
 }

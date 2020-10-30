@@ -1,55 +1,62 @@
 import React from 'react';
-import { ModalStoreContext, ModalStoreContextValue } from './Context';
+import { ModalStoreContext } from './Context';
 
-export interface ModalConfig {
-  key: string;
-  component: React.ComponentType<any>;
-  destroyOnClose?: boolean;
+export interface ModalStoreBaseProps {
+  destroyOnClose?: boolean | string;
   visiblePropName?: string;
-  closePropName?: string;
+  onClosePropName?: string;
 }
 
-export interface ModalManagerProps {
+export interface ModalConfig extends ModalStoreBaseProps {
+  component: React.ComponentType<any>;
+}
+
+export interface ModalStoreProps extends ModalStoreBaseProps {
   children: React.ReactNode;
-  modalConfigs: ModalConfig[];
+  modals: Record<string, React.ComponentType<any> | ModalConfig>;
 }
 
-interface ModalItem {
+interface ModalItem extends Record<string, any> {
   key: string;
-  state: any;
 }
 
 interface ModalStoreState {
-  modals: ModalItem[];
+  currentModal: ModalItem[];
 }
 
-class ModalStore extends React.Component<ModalManagerProps, ModalStoreState> {
-  contextValue: ModalStoreContextValue;
-
-  constructor(props: ModalManagerProps) {
+class ModalStore extends React.Component<ModalStoreProps, ModalStoreState> {
+  constructor(props: ModalStoreProps) {
     super(props);
     this.state = {
-      modals: [],
-    };
-    this.contextValue = {
-      push: this.push.bind(this),
+      currentModal: [],
     };
   }
 
-  private setModals(fn: (prev: ModalItem[]) => ModalItem[]) {
-    this.setState((prev) => {
-      return {
-        modals: fn(prev.modals),
-      };
-    });
+  private getModalConfig(key: string) {
+    const {
+      modals,
+      visiblePropName = 'visible',
+      onClosePropName = 'onCancel',
+      destroyOnClose = true,
+    } = this.props;
+    let config = modals[key];
+    if (typeof config === 'function') {
+      config = { component: config };
+    }
+    return { visiblePropName, onClosePropName, destroyOnClose, ...config };
   }
 
-  private getCloseFunction(key: string, prop: string, cb?: (...args: any[]) => void) {
+  private setModalsState(fn: (prev: ModalItem[]) => ModalItem[]) {
+    this.setState((prev) => ({ currentModal: fn(prev.currentModal) }));
+  }
+
+  private getCloseFunction(key: string, cb?: (...args: any[]) => void) {
     return (...args: any[]) => {
-      this.setModals((prev) => {
+      const { visiblePropName } = this.getModalConfig(key);
+      this.setModalsState((prev) => {
         return prev.map((v) => {
           if (v.key === key) {
-            return { key, state: { ...v.state, [prop]: false } };
+            return { ...v, [visiblePropName]: false };
           }
           return v;
         });
@@ -60,48 +67,54 @@ class ModalStore extends React.Component<ModalManagerProps, ModalStoreState> {
     };
   }
 
-  private push(key: string, state: any) {
-    const { modalConfigs } = this.props;
-    const config = modalConfigs.find((item) => item.key === key);
-    if (!config) {
-      return;
-    }
+  private getDestroyFunction(key: string, cb?: (...args: any[]) => void) {
+    return (...args: any[]) => {
+      this.setModalsState((prev) => prev.filter((v) => v.key !== key));
+      if (typeof cb === 'function') {
+        cb(...args);
+      }
+    };
+  }
 
-    const { visiblePropName = 'visible', closePropName = 'onCancel' } = config;
+  private push = (key: string, state: any) => {
+    const { visiblePropName, onClosePropName, destroyOnClose } = this.getModalConfig(key);
 
-    this.setModals((prevModals) => {
-      const nextModals = prevModals.slice();
-      const index = nextModals.findIndex((item) => item.key === key);
-      const defaultProps = {
+    this.setModalsState((prevModals) => {
+      const defaultProps: any = {
         [visiblePropName]: true,
-        [closePropName]: this.getCloseFunction(key, visiblePropName, state[closePropName]),
+        [onClosePropName]: this.getCloseFunction(key, state[onClosePropName]),
       };
-      const newModal = { key, state: { ...state, ...defaultProps } };
-
-      if (index !== -1 && nextModals[index].state[visiblePropName] === false) {
-        nextModals.splice(index, 1);
+      if (destroyOnClose) {
+        const prop = typeof destroyOnClose === 'string' ? destroyOnClose : onClosePropName;
+        defaultProps[prop] = this.getDestroyFunction(key);
       }
 
+      const newModal = { ...state, ...defaultProps, key };
+
+      const nextModals = prevModals.slice();
+      const index = nextModals.findIndex((item) => item.key === key);
+      if (index !== -1) {
+        nextModals.splice(index, 1);
+      }
       nextModals.push(newModal);
 
       return nextModals;
     });
-  }
+  };
 
-  private renderModal({ key, state }: { key: string; state: any }) {
-    const { modalConfigs } = this.props;
-    const config = modalConfigs.find((item) => item.key === key);
-    if (!config || !config.component) return null;
-    return React.createElement(config.component, { ...state, key });
-  }
+  private renderModal = (item: ModalItem) => {
+    const { component } = this.getModalConfig(item.key);
+    if (!component) return null;
+    return React.createElement(component, item);
+  };
 
   render() {
-    const { modals } = this.state;
+    const { currentModal } = this.state;
     const { children } = this.props;
     return (
-      <ModalStoreContext.Provider value={this.contextValue}>
+      <ModalStoreContext.Provider value={this.push}>
         {children}
-        {modals.map(this.renderModal)}
+        {currentModal.map(this.renderModal)}
       </ModalStoreContext.Provider>
     );
   }
