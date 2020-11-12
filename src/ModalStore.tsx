@@ -1,26 +1,27 @@
 import React from 'react';
-import { ModalStoreContext } from './Context';
+import { ModalContext } from './Context';
 
-export interface ModalStoreBaseProps {
+export interface ModalFullConfig<T = any> {
   destroyOnClose?: boolean | string;
   visiblePropName?: string;
   onClosePropName?: string;
+  component: React.ComponentType<T>;
 }
 
-export interface ModalConfig extends ModalStoreBaseProps {
-  component: React.ComponentType<any>;
-}
+export type ModalConfig<T = any> = ModalFullConfig<T> | React.ComponentType<T>;
 
-export interface ModalStoreProps extends ModalStoreBaseProps {
+export type ModalConfigMap = Record<string, ModalConfig>;
+
+export interface ModalStoreProps extends Omit<ModalFullConfig, 'component'> {
   children: React.ReactNode;
-  modals: Record<string, React.ComponentType<any> | ModalConfig>;
+  modalMap: ModalConfigMap;
 }
 
-interface ModalItem extends Record<string, any> {
+export interface ModalItem extends Record<string, any> {
   key: string;
 }
 
-interface ModalStoreState {
+export interface ModalStoreState {
   currentModal: ModalItem[];
 }
 
@@ -34,12 +35,12 @@ class ModalStore extends React.Component<ModalStoreProps, ModalStoreState> {
 
   private getModalConfig(key: string) {
     const {
-      modals,
+      modalMap = {},
       visiblePropName = 'visible',
       onClosePropName = 'onCancel',
       destroyOnClose = true,
     } = this.props;
-    let config = modals[key];
+    let config = modalMap[key];
     if (typeof config === 'function') {
       config = { component: config };
     }
@@ -112,10 +113,10 @@ class ModalStore extends React.Component<ModalStoreProps, ModalStoreState> {
     const { currentModal } = this.state;
     const { children } = this.props;
     return (
-      <ModalStoreContext.Provider value={this.push}>
+      <ModalContext.Provider value={this.push}>
         {children}
         {currentModal.map(this.renderModal)}
-      </ModalStoreContext.Provider>
+      </ModalContext.Provider>
     );
   }
 }

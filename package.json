@@ -1,25 +1,32 @@
 {
   "name": "react-modal-store",
-  "version": "0.1.0",
-  "description": "global manage modal",
-  "main": "index.js",
+  "version": "1.0.0",
+  "description": "global manage react modal",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "module": "lib/index.es.js",
+  "jsnext:main": "lib/index.es.js",
+  "typings": "lib/index.d.ts",
   "scripts": {
-    "dev": "parcel ./example/index.html"
+    "dev": "parcel ./example/index.html --open",
+    "build": "rollup -c",
+    "release": "bash build/git.sh && bash build/release.sh"
   },
   "author": "xiemengxiong",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-react": "^7.10.4",
     "@babel/preset-typescript": "^7.10.4",
-    "@rollup/plugin-babel": "^5.0.4",
-    "@rollup/plugin-commonjs": "^13.0.0",
-    "@rollup/plugin-node-resolve": "^8.1.0",
     "@types/react": "^16.9.42",
     "@types/react-dom": "^16.9.8",
     "@typescript-eslint/eslint-plugin": "^3.6.0",
     "@typescript-eslint/parser": "^3.6.0",
+    "antd": "^4.8.2",
     "eslint": "^7.4.0",
     "eslint-config-airbnb": "^18.2.0",
     "eslint-config-prettier": "^6.11.0",
@@ -33,10 +40,20 @@
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "rollup": "^2.21.0",
+    "rollup": "^2.33.1",
+    "rollup-plugin-typescript2": "^0.29.0",
     "typescript": "^3.9.6"
   },
-  "dependencies": {
-    "antd": "^4.7.3"
+  "dependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "prettier --write",
+      "git add"
+    ]
   }
 }

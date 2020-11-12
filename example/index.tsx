@@ -1,50 +1,61 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { Modal } from 'antd';
-import { ModalStore, ModalStoreContext } from '../src';
+import { ModalProps } from 'antd/lib/modal';
+import { ModalStore, createModalHook } from '../src';
 import 'antd/dist/antd.css';
 
-function M1({ text, ...rest }: any) {
+interface M1Props extends ModalProps {
+  text: string;
+  onCancel: () => void;
+}
+
+interface M2Props extends ModalProps {
+  name: string;
+  onCancel: () => void;
+}
+
+function M1({ text, onCancel, ...rest }: M1Props) {
   return (
-    <Modal title="m1" {...rest}>
+    <Modal title="m1" onOk={onCancel} onCancel={onCancel} {...rest}>
       <div>{text}</div>
     </Modal>
   );
 }
 
-function M2({ name, ...rest }: any) {
+function M2({ name, onCancel, ...rest }: M2Props) {
   return (
-    <Modal title="m2" {...rest}>
+    <Modal title="m2" onOk={onCancel} onCancel={onCancel} {...rest}>
       <div>{name}</div>
     </Modal>
   );
 }
 
-function Content() {
-  const dispatchModal = useContext(ModalStoreContext);
+const modalMap = {
+  m1: M1,
+  m2: M2,
+};
 
-  console.log('render content');
+const useModal = createModalHook<typeof modalMap>();
+
+function Content() {
+  const dispatchModal = useModal();
 
   return (
     <div>
-      <button type="button" onClick={() => dispatchModal('m1', { text: '我是m1' })}>
+      <button type="button" onClick={() => dispatchModal('m1', { text: 'ok' })}>
         show m1
       </button>
-      <button type="button" onClick={() => dispatchModal('m2', { name: '我是m2' })}>
+      <button type="button" onClick={() => dispatchModal('m2', { name: 'm2' })}>
         show m2
       </button>
     </div>
   );
 }
 
-const modals = {
-  m1: M1,
-  m2: M2,
-};
-
 function App() {
   return (
-    <ModalStore modals={modals} destroyOnClose="afterClose">
+    <ModalStore modalMap={modalMap} destroyOnClose="afterClose">
       <Content />
     </ModalStore>
   );
