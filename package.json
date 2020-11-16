@@ -12,6 +12,7 @@
   "typings": "lib/index.d.ts",
   "scripts": {
     "dev": "parcel ./example/index.html --open",
+    "clean": "rm -rf lib/",
     "build": "rollup -c",
     "release": "bash build/git.sh && bash build/release.sh"
   },
@@ -38,13 +39,17 @@
     "lint-staged": "^10.2.11",
     "parcel-bundler": "^1.12.4",
     "prettier": "^2.0.5",
-    "react": "^16.13.1",
+    "react": "^16.14.0",
     "react-dom": "^16.13.1",
     "rollup": "^2.33.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-typescript2": "^0.29.0",
-    "typescript": "^3.9.6"
+    "typescript": "^4.0.5"
   },
-  "dependencies": {},
+  "dependencies": {
+    "tslib": "^2.0.3"
+  },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
